@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <string>
 #include <fstream>
+#include <assert.h>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ int rozmiar_listy(){
     return i;
 }
 
-node list_insert(int value){
+node *list_insert(int value){
 
     node *tmp = new node;
 
@@ -34,7 +35,7 @@ node list_insert(int value){
     }
     HEAD=tmp;
 
-    return *tmp;
+    return tmp;
 }
 
 node *list_search(int value){
@@ -80,17 +81,6 @@ void list_delete(int value){
     }
 }
 
-void czy_spojna(){
-    int i,n=rozmiar_listy();
-    node *tmp=HEAD;
-    for(i=0;i<n;i++){
-        if(tmp==NULL){
-            cout<<"nie spojna";
-        }
-        tmp=tmp->next;
-    }
-}
-
 void fill_random(int *t, int n){
     fill_increasing(t,n);
     shuffle(t,n);
@@ -98,15 +88,14 @@ void fill_random(int *t, int n){
 
 
 void (*rodzaj_wypelnienia[])(int *,int n) = {fill_increasing,fill_random};
-int nk[]={10000,20000,30000,40000,50000,60000};
+int ns[]={10000,20000,30000,40000,50000,60000,70000,80000};
 fstream plik[2];
 
 int main()
 {
     srand(time(NULL));
 
-    int i,j,k;
-    node a;
+    int i,j,k,x;
     node *aktualny;
 
     clock_t start;
@@ -127,38 +116,48 @@ int main()
 
             cout<<"rozmiar "<<"dodawanie "<<"wyszukiwanie "<<endl;
 
-    for(i=0;i<sizeof(nk)/sizeof(*nk);i++){
-        int *T = new int[nk[i]];
+    for(i=0;i<sizeof(ns)/sizeof(*ns);i++){
+        int *T = new int[ns[i]];
 
-        plik[k]<<nk[i]<<" ";
+        cout<<ns[i]<<" ";
+        plik[k]<<ns[i]<<" ";
 
-        rodzaj_wypelnienia[k](T,nk[i]);
+        rodzaj_wypelnienia[k](T,ns[i]);
 
         start = clock();
-        for(j=0;j<nk[i];j++){
-            a=list_insert(T[j]);
+        for(j=0;j<ns[i];j++){
+            aktualny=list_insert(T[j]);
+            assert(aktualny != NULL);       // inserted element cannot be NULL
+            assert(aktualny->key == T[j]);
         }
         stop = clock();
-        czy_spojna();
+
         cout<<(double)(stop-start)/(double)CLOCKS_PER_SEC<<" ";
         plik[k]<<(double)(stop-start)/(double)CLOCKS_PER_SEC<<" ";
 
+        shuffle(T,ns[i]);
 
-        shuffle(T,nk[i]);
 
         start = clock();
-        for(j=0;j<nk[i];j++){
+        for(j=0;j<ns[i];j++){
             aktualny=list_search(T[j]);
+            assert(aktualny != NULL);       // found element cannot be NULL
+            assert(aktualny->key == T[j]);
         }
         stop = clock();
-        czy_spojna();
+
         cout<<(double)(stop-start)/(double)CLOCKS_PER_SEC<<" ";
         plik[k]<<(double)(stop-start)/(double)CLOCKS_PER_SEC<<" ";
 
-        for(j=0;j<nk[i];j++){
+
+        for(j=0;j<ns[i];j++){
+            assert(rozmiar_listy() == ns[i]-j);
             list_delete(T[j]);
         }
-        czy_spojna();
+
+        assert(rozmiar_listy() == 0);       // after all deletions, the list size is zero
+        assert(HEAD == NULL);
+
 
         plik[k]<<endl;
         cout<<endl;
@@ -175,3 +174,6 @@ int main()
 
     return 0;
 }
+
+        //x=(stop-start)/CLOCKS_PER_SEC;
+        //plik[k]<<x<<","<<((double)(stop-start)/(double)CLOCKS_PER_SEC-x)*1000<<" ";
